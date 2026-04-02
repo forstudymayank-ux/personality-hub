@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PersonalityHub — Discover Who You Are</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#07070f;--surface:#0f0f1a;--card:#13131f;--card2:#181828;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#f1f0ff;--muted:rgba(241,240,255,0.5);--hint:rgba(241,240,255,0.3);
+  --accent:#8b5cf6;--accent2:#a78bfa;--wa:#25D366;
+}
+html{font-size:16px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:-40%;left:-20%;width:70%;height:70%;background:radial-gradient(ellipse,rgba(139,92,246,0.1) 0%,transparent 70%);pointer-events:none;z-index:0;}
+body::after{content:'';position:fixed;bottom:-30%;right:-20%;width:55%;height:55%;background:radial-gradient(ellipse,rgba(168,85,247,0.07) 0%,transparent 70%);pointer-events:none;z-index:0;}
+.wrap{max-width:600px;margin:0 auto;padding:0 1rem;position:relative;z-index:1;}
+
+/* ---- SCREENS ---- */
+.screen{display:none;}
+.screen.active{display:block;animation:fadeUp 0.35s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+
+/* ---- HOME ---- */
+.home-head{padding:2.5rem 0 1.5rem;}
+.home-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.25);border-radius:99px;padding:5px 14px;font-size:11px;font-weight:600;letter-spacing:.08em;color:var(--accent2);text-transform:uppercase;margin-bottom:1rem;}
+.home-h1{font-family:'Syne',sans-serif;font-size:clamp(1.8rem,7vw,2.6rem);font-weight:800;line-height:1.1;background:linear-gradient(135deg,#f1f0ff 30%,#a78bfa 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:.6rem;}
+.home-sub{font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:2rem;}
+.quiz-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-bottom:3rem;}
+@media(max-width:400px){.quiz-grid{grid-template-columns:1fr;}}
+.quiz-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:1.25rem;cursor:pointer;transition:all .25s;position:relative;overflow:hidden;}
+.quiz-card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .25s;}
+.quiz-card:hover{border-color:var(--border2);transform:translateY(-3px);box-shadow:0 8px 32px rgba(0,0,0,0.3);}
+.quiz-card:hover::before{opacity:1;}
+.card-icon{font-size:28px;margin-bottom:.75rem;display:block;}
+.card-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:.3rem;line-height:1.2;}
+.card-sub{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:.5rem;}
+.card-desc{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:.75rem;}
+.card-meta{display:flex;align-items:center;justify-content:space-between;}
+.card-qcount{font-size:11px;color:var(--hint);background:rgba(255,255,255,0.05);border-radius:99px;padding:3px 10px;}
+.card-arr{font-size:14px;color:var(--hint);}
+.quiz-card:hover .card-arr{color:var(--text);}
+.add-card{border:1px dashed rgba(255,255,255,0.12);background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:180px;gap:.5rem;}
+.add-card:hover{border-color:rgba(139,92,246,0.4);background:rgba(139,92,246,0.05);}
+.add-icon{font-size:28px;color:var(--hint);}
+.add-text{font-size:13px;color:var(--hint);font-weight:500;}
+
+/* ---- QUIZ ENGINE ---- */
+.quiz-nav{display:flex;align-items:center;gap:12px;padding:1.5rem 0 1.25rem;}
+.back-btn{background:transparent;border:1px solid var(--border);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--muted);cursor:pointer;transition:all .15s;}
+.back-btn:hover{border-color:var(--border2);color:var(--text);}
+.quiz-title-bar{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text);}
+.prog-wrap{margin-bottom:1.5rem;}
+.prog-meta{display:flex;justify-content:space-between;margin-bottom:8px;}
+.prog-label{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent2);}
+.prog-pct{font-size:11px;color:var(--hint);}
+.prog-track{height:3px;background:rgba(255,255,255,0.05);border-radius:99px;overflow:hidden;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width .5s cubic-bezier(.4,0,.2,1);box-shadow:0 0 6px rgba(167,139,250,.5);}
+.q-num-badge{display:inline-block;background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.2);border-radius:99px;padding:3px 12px;font-size:11px;color:var(--accent2);margin-bottom:.75rem;}
+.q-text{font-family:'Syne',sans-serif;font-size:clamp(1.05rem,4vw,1.3rem);font-weight:700;color:var(--text);margin-bottom:1.5rem;line-height:1.35;}
+.opts{display:flex;flex-direction:column;gap:9px;margin-bottom:1.5rem;}
+.opt{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;text-align:left;font-family:'DM Sans',sans-serif;font-size:14px;color:rgba(241,240,255,.7);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:12px;line-height:1.45;}
+.opt:hover{border-color:rgba(139,92,246,.45);background:rgba(139,92,246,.07);color:var(--text);transform:translateX(3px);}
+.opt.sel{border-color:var(--accent);background:rgba(139,92,246,.15);color:var(--text);box-shadow:0 0 0 1px var(--accent);}
+.odot{width:18px;height:18px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.15);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.opt.sel .odot{background:var(--accent);border-color:var(--accent);}
+.opt.sel .odot::after{content:'';width:5px;height:5px;border-radius:50%;background:#fff;}
+.q-nav{display:flex;gap:9px;}
+.btn-back2{flex:1;padding:13px;background:transparent;border:1px solid var(--border);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s;}
+.btn-back2:hover:not(:disabled){border-color:var(--border2);color:var(--text);}
+.btn-back2:disabled{opacity:.2;cursor:not-allowed;}
+.btn-next{flex:2.5;padding:13px;background:linear-gradient(135deg,#7c3aed,#9333ea);border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;color:#fff;cursor:pointer;box-shadow:0 0 18px rgba(139,92,246,.3);transition:all .15s;}
+.btn-next:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 0 26px rgba(139,92,246,.45);}
+.btn-next:disabled{opacity:.2;cursor:not-allowed;box-shadow:none;}
+
+/* ---- RESULT ---- */
+.result-hero{text-align:center;padding:2rem 0 1.5rem;}
+.r-glow{width:96px;height:96px;border-radius:50%;margin:0 auto 1rem;display:flex;align-items:center;justify-content:center;font-size:44px;position:relative;}
+.r-glow::before{content:'';position:absolute;inset:-10px;border-radius:50%;background:radial-gradient(circle,rgba(139,92,246,.25),transparent 70%);animation:gp 2.5s ease-in-out infinite;}
+@keyframes gp{0%,100%{transform:scale(1);opacity:.7;}50%{transform:scale(1.12);opacity:1;}}
+.r-tag{display:inline-block;border-radius:99px;padding:4px 14px;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.75rem;}
+.r-title{font-family:'Syne',sans-serif;font-size:clamp(1.5rem,6vw,2rem);font-weight:800;background:linear-gradient(135deg,#f1f0ff 30%,#a78bfa 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:.75rem;}
+.r-overview{font-size:14px;color:var(--muted);line-height:1.7;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.1rem;text-align:left;margin-bottom:1.5rem;}
+
+/* sections */
+.r-section{margin-bottom:1.5rem;}
+.r-section-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent2);margin-bottom:.75rem;display:flex;align-items:center;gap:8px;}
+.r-section-title::after{content:'';flex:1;height:1px;background:rgba(139,92,246,.2);}
+.strength-list{display:flex;flex-direction:column;gap:7px;}
+.strength-item{background:rgba(20,184,166,0.08);border:1px solid rgba(20,184,166,0.2);border-radius:10px;padding:10px 14px;font-size:13px;color:rgba(241,240,255,.8);display:flex;align-items:center;gap:10px;}
+.strength-item::before{content:'✦';color:#14b8a6;font-size:10px;flex-shrink:0;}
+.weakness-list{display:flex;flex-direction:column;gap:10px;}
+.weakness-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.w-head{background:rgba(239,68,68,0.08);border-bottom:1px solid var(--border);padding:10px 14px;font-size:13px;font-weight:600;color:rgba(252,165,165,0.9);display:flex;align-items:center;gap:8px;}
+.w-head::before{content:'⚠';font-size:11px;}
+.w-fix{padding:10px 14px;font-size:13px;color:var(--muted);line-height:1.6;}
+.w-fix strong{color:rgba(167,139,250,0.9);font-weight:600;}
+.career-chips{display:flex;flex-wrap:wrap;gap:8px;}
+.career-chip{background:var(--card);border:1px solid var(--border);border-radius:99px;padding:6px 14px;font-size:12px;color:rgba(241,240,255,.7);}
+.famous-list{display:flex;flex-wrap:wrap;gap:8px;}
+.famous-chip{background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.2);border-radius:99px;padding:6px 14px;font-size:12px;color:var(--accent2);}
+
+/* big5 bars */
+.b5-bars{display:flex;flex-direction:column;gap:12px;margin-bottom:1.5rem;}
+.b5-row{display:flex;flex-direction:column;gap:5px;}
+.b5-meta{display:flex;justify-content:space-between;align-items:center;}
+.b5-label{font-size:12px;font-weight:600;color:var(--muted);}
+.b5-val{font-size:12px;color:var(--accent2);}
+.b5-track{height:6px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden;}
+.b5-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width 1s cubic-bezier(.4,0,.2,1);}
+
+/* result actions */
+.r-actions{padding:1rem 0 2rem;display:flex;flex-direction:column;gap:9px;}
+.btn-wa{display:flex;align-items:center;justify-content:center;gap:9px;padding:15px;background:var(--wa);border:none;border-radius:13px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:#fff;cursor:pointer;box-shadow:0 0 18px rgba(37,211,102,.2);transition:all .15s;}
+.btn-wa:hover{transform:translateY(-1px);box-shadow:0 0 26px rgba(37,211,102,.35);}
+.btn-another{padding:13px;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.25);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;color:var(--accent2);cursor:pointer;transition:all .15s;}
+.btn-another:hover{background:rgba(139,92,246,0.18);}
+.btn-home{padding:12px;background:transparent;border:1px solid var(--border);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--muted);cursor:pointer;transition:all .15s;}
+.btn-home:hover{border-color:var(--border2);color:var(--text);}
+
+/* ---- QUIZ BUILDER ---- */
+.builder-head{padding:1.5rem 0 1rem;}
+.builder-h{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:var(--text);margin-bottom:.5rem;}
+.builder-sub{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:1.5rem;}
+.field-group{margin-bottom:1.25rem;}
+.field-label{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem;display:block;}
+.field-input{width:100%;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none;transition:border-color .15s;}
+.field-input:focus{border-color:rgba(139,92,246,.5);}
+.field-input::placeholder{color:var(--hint);}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.color-opts{display:flex;gap:8px;flex-wrap:wrap;}
+.color-opt{width:32px;height:32px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s;}
+.color-opt.active{border-color:#fff;transform:scale(1.1);}
+.b-q-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:10px;}
+.b-q-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;}
+.b-q-num{font-size:11px;font-weight:600;color:var(--accent2);text-transform:uppercase;letter-spacing:.08em;}
+.b-q-del{background:transparent;border:none;color:rgba(239,68,68,0.7);cursor:pointer;font-size:13px;padding:2px 8px;}
+.b-q-del:hover{color:rgba(239,68,68,1);}
+.b-opt-row{display:flex;gap:8px;margin-bottom:6px;}
+.b-opt-input{flex:1;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);outline:none;}
+.b-opt-input:focus{border-color:rgba(139,92,246,.4);}
+.b-opt-type{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text);outline:none;width:100px;}
+.add-q-btn{display:flex;align-items:center;gap:8px;background:transparent;border:1px dashed rgba(255,255,255,.12);border-radius:10px;padding:12px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--hint);cursor:pointer;width:100%;justify-content:center;transition:all .15s;margin-bottom:1.25rem;}
+.add-q-btn:hover{border-color:rgba(139,92,246,.3);color:var(--accent2);}
+.r-types-section{margin-bottom:1.25rem;}
+.r-type-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:10px;}
+.r-type-head{font-size:12px;font-weight:600;color:var(--accent2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.75rem;}
+.btn-save-quiz{display:block;width:100%;padding:15px;background:linear-gradient(135deg,#7c3aed,#9333ea);border:none;border-radius:13px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:#fff;cursor:pointer;box-shadow:0 0 20px rgba(139,92,246,.3);margin-bottom:2rem;transition:all .15s;}
+.btn-save-quiz:hover{transform:translateY(-1px);box-shadow:0 0 28px rgba(139,92,246,.45);}
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:rgba(20,184,166,0.15);border:1px solid rgba(20,184,166,0.4);border-radius:10px;padding:10px 20px;font-size:13px;color:#5eead4;z-index:100;animation:toastIn .3s ease;display:none;}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(10px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+.dots-row{display:flex;justify-content:center;gap:5px;margin-bottom:1rem;}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:dp .5s ease both;}
+.dot:nth-child(2){animation-delay:.1s;background:var(--accent2);}
+.dot:nth-child(3){animation-delay:.2s;}
+.dot:nth-child(4){animation-delay:.3s;background:var(--accent2);}
+.dot:nth-child(5){animation-delay:.4s;}
+@keyframes dp{0%{transform:scale(0);opacity:0;}60%{transform:scale(1.5);}100%{transform:scale(1);opacity:1;}}
+textarea.field-input{resize:vertical;min-height:80px;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<!-- HOME -->
+<div class="screen active" id="s-home">
+  <div class="home-head">
+    <div class="home-badge">★ Personality Hub</div>
+    <h1 class="home-h1">Discover Who You Really Are</h1>
+    <p class="home-sub">Science-backed personality quizzes. Deep insights on your strengths, weaknesses, and how to level up.</p>
+  </div>
+  <div class="quiz-grid" id="quiz-grid"></div>
+</div>
+
+<!-- QUIZ -->
+<div class="screen" id="s-quiz">
+  <div class="quiz-nav">
+    <button class="back-btn" onclick="goHome()">← Home</button>
+    <span class="quiz-title-bar" id="qtbar"></span>
+  </div>
+  <div class="prog-wrap">
+    <div class="prog-meta">
+      <span class="prog-label" id="qlabel">Q 1 of 16</span>
+      <span class="prog-pct" id="qpct">0%</span>
+    </div>
+    <div class="prog-track"><div class="prog-fill" id="pfill" style="width:0%"></div></div>
+  </div>
+  <div class="q-num-badge" id="qbadge">Question 1</div>
+  <div class="q-text" id="qtext"></div>
+  <div class="opts" id="qopts"></div>
+  <div class="q-nav">
+    <button class="btn-back2" id="qback" onclick="qPrev()" disabled>← Back</button>
+    <button class="btn-next" id="qnext" onclick="qNext()" disabled>Next →</button>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div class="screen" id="s-result">
+  <div class="quiz-nav">
+    <button class="back-btn" onclick="goHome()">← Home</button>
+    <span class="quiz-title-bar">Your Result</span>
+  </div>
+  <div class="result-hero">
+    <div class="r-glow" id="r-icon"></div>
+    <div class="dots-row"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    <div class="r-tag" id="r-tag"></div>
+    <div class="r-title" id="r-title"></div>
+    <div class="r-overview" id="r-overview"></div>
+  </div>
+  <div id="r-body"></div>
+  <div class="r-actions">
+    <button class="btn-wa" onclick="doShare()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      WhatsApp pe Share Karo
+    </button>
+    <button class="btn-another" onclick="retakeQuiz()">↺ Dobara Karo</button>
+    <button class="btn-home" onclick="goHome()">← Doosra Quiz Try Karo</button>
+  </div>
+</div>
+
+<!-- BUILDER -->
+<div class="screen" id="s-builder">
+  <div class="quiz-nav">
+    <button class="back-btn" onclick="goHome()">← Home</button>
+    <span class="quiz-title-bar">Custom Quiz</span>
+  </div>
+  <div class="builder-head">
+    <div class="builder-h">Apna Quiz Banao ✦</div>
+    <p class="builder-sub">Koi bhi topic pe quiz banao — apne dosto ko share karo!</p>
+  </div>
+  <div class="field-group">
+    <label class="field-label">Quiz ka Naam</label>
+    <input class="field-input" id="b-name" placeholder="e.g. Harry Potter House Test"/>
+  </div>
+  <div class="field-group">
+    <label class="field-label">Emoji Icon</label>
+    <input class="field-input" id="b-emoji" placeholder="Ek emoji daalo e.g. 🎭" style="font-size:20px;"/>
+  </div>
+  <div class="field-group">
+    <label class="field-label">Short Description</label>
+    <input class="field-input" id="b-desc" placeholder="Is quiz mein kya discover hoga?"/>
+  </div>
+  <div class="field-group">
+    <label class="field-label">Color</label>
+    <div class="color-opts" id="color-opts">
+      <div class="color-opt active" style="background:#8b5cf6" data-c="#8b5cf6"></div>
+      <div class="color-opt" style="background:#3b82f6" data-c="#3b82f6"></div>
+      <div class="color-opt" style="background:#ec4899" data-c="#ec4899"></div>
+      <div class="color-opt" style="background:#14b8a6" data-c="#14b8a6"></div>
+      <div class="color-opt" style="background:#f59e0b" data-c="#f59e0b"></div>
+      <div class="color-opt" style="background:#ef4444" data-c="#ef4444"></div>
+      <div class="color-opt" style="background:#10b981" data-c="#10b981"></div>
+    </div>
+  </div>
+
+  <div class="r-section-title" style="margin-bottom:1rem;">Result Types Define Karo <span style="font-size:10px;color:var(--hint);text-transform:none;letter-spacing:0;font-family:'DM Sans',sans-serif;">(Min 2)</span></div>
+  <div id="b-types"></div>
+  <button class="add-q-btn" onclick="addType()" style="margin-bottom:1.5rem;">+ Result Type Add Karo</button>
+
+  <div class="r-section-title" style="margin-bottom:1rem;">Questions Add Karo <span style="font-size:10px;color:var(--hint);text-transform:none;letter-spacing:0;font-family:'DM Sans',sans-serif;">(Min 4)</span></div>
+  <div id="b-questions"></div>
+  <button class="add-q-btn" onclick="addQuestion()">+ Question Add Karo</button>
+  <br/>
+  <button class="btn-save-quiz" onclick="saveCustomQuiz()">Quiz Save Karo & Play Karo →</button>
+</div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================
+   QUIZ DATA
+   ============================ */
+
+const QUIZZES = [
+{
+  id:'mbti',icon:'🧠',title:'MBTI Personality',sub:'16 Personality Types',
+  desc:'Discover your true personality type based on psychology',
+  color:'#8b5cf6',qCount:16,type:'dimensional',
+  dims:['EI','SN','TF','JP'],
+  questions:[
+    {q:"Ek tiring week ke baad tu prefer karta hai?",dim:'EI',opts:[{t:"Bahar dosto ke saath time spend karna",dir:'E'},{t:"Ghar pe akele rest karna",dir:'I'}]},
+    {q:"Naye logo se milna tujhe lagta hai?",dim:'EI',opts:[{t:"Energizing — I love meeting people",dir:'E'},{t:"Exhausting — prefer close friends",dir:'I'}]},
+    {q:"Class mein discussion ho toh tu...",dim:'EI',opts:[{t:"Aage hoke bolna prefer karta hoon",dir:'E'},{t:"Sunna, phir carefully respond karna",dir:'I'}]},
+    {q:"Stressed hone pe tu usually...",dim:'EI',opts:[{t:"Logo ke paas jaata hoon, baat karta hoon",dir:'E'},{t:"Akele time chahiye hota hai",dir:'I'}]},
+    {q:"Tu zyada trust karta hai...",dim:'SN',opts:[{t:"Jo directly dekha/suna — concrete facts",dir:'S'},{t:"Gut feeling aur hidden patterns",dir:'N'}]},
+    {q:"Naya kaam seekhte waqt prefer karta hai...",dim:'SN',opts:[{t:"Step-by-step practical instructions",dir:'S'},{t:"Pehle overall concept, phir details",dir:'N'}]},
+    {q:"Tera focus naturally jata hai...",dim:'SN',opts:[{t:"Present pe — jo hai woh better banao",dir:'S'},{t:"Future pe — jo ho sakta hai woh socho",dir:'N'}]},
+    {q:"Tujhe zyada interesting kya lagta hai?",dim:'SN',opts:[{t:"Real, practical experiences",dir:'S'},{t:"Abstract theories aur big ideas",dir:'N'}]},
+    {q:"Mushkil decision lena ho toh tu...",dim:'TF',opts:[{t:"Logic aur objective analysis pe depend karta hoon",dir:'T'},{t:"Emotions aur values consider karta hoon",dir:'F'}]},
+    {q:"Dost ke galat decision pe tu...",dim:'TF',opts:[{t:"Seedha bolne mein believe karta hoon — truth first",dir:'T'},{t:"Unki feelings protect karte hue suggest karta hoon",dir:'F'}]},
+    {q:"Tu zyada appreciate karta hai...",dim:'TF',opts:[{t:"Logical consistency aur accuracy",dir:'T'},{t:"Empathy aur emotional connection",dir:'F'}]},
+    {q:"Argument mein tera goal hota hai...",dim:'TF',opts:[{t:"Jo sahi hai woh prove karna",dir:'T'},{t:"Sab ko comfortable aur heard feel karana",dir:'F'}]},
+    {q:"Tera ideal weekend...",dim:'JP',opts:[{t:"Pre-planned — schedule pata hona chahiye",dir:'J'},{t:"Spontaneous — dekhte hain kya hoga",dir:'P'}]},
+    {q:"Deadline ke baare mein tera attitude...",dim:'JP',opts:[{t:"Pehle finish karna — last minute se hate",dir:'J'},{t:"Last minute mein best perform karta hoon",dir:'P'}]},
+    {q:"Tera room/study table usually...",dim:'JP',opts:[{t:"Organized aur neat — I need order",dir:'J'},{t:"Creative chaos — I know where everything is",dir:'P'}]},
+    {q:"Naya project shuru karte waqt tu...",dim:'JP',opts:[{t:"Pehle poora plan banata hoon",dir:'J'},{t:"Seedha start karta hoon, adjust karta rehta",dir:'P'}]}
+  ],
+  score:function(ans){
+    const c={E:0,I:0,S:0,N:0,T:0,F:0,J:0,P:0};
+    ans.forEach(a=>c[a.dir]++);
+    return (c.E>=c.I?'E':'I')+(c.S>=c.N?'S':'N')+(c.T>=c.F?'T':'F')+(c.J>=c.P?'J':'P');
+  },
+  results:{
+    INTJ:{icon:'♟',title:'INTJ — The Architect',tag:'Strategic Mastermind',overview:'Tu ek rare combination hai — analytical mind + creative vision. Tu duniya ko ek complex chess game ki tarah dekhta hai. Independence aur constant self-improvement teri core drive hai.',strengths:['Long-term strategic thinking','High intellectual standards','Decisive and self-confident','Constant self-improvement drive','Creative problem solving'],weaknesses:[{w:'Arrogance — dismisses others ideas',fix:'Actively ask "What am I missing?" before concluding. Teri blind spots mein hi opportunities hain.'},{w:'Emotionally distant, hard to connect',fix:'Daily ek genuine compliment do. Logon ki efforts appreciate karo, sirf results nahi.'},{w:'Extremely high standards cause burnout',fix:'70% perfect is still excellent. Progress celebrate karo, perfection nahi.'}],careers:['Software Architect','Scientist','Strategist','Entrepreneur','Lawyer'],famous:['Elon Musk','Christopher Nolan','Nikola Tesla']},
+    INTP:{icon:'🔬',title:'INTP — The Logician',tag:'Innovative Analyzer',overview:'Tu ek intellectual powerhouse hai — theories explore karna, patterns find karna, conventional wisdom challenge karna tera nature hai. Tu silence mein ideas build karta hai.',strengths:['Exceptional analytical ability','Original and creative thinker','Open-minded to new ideas','Objective and impartial','Passionate about learning'],weaknesses:[{w:'Chronic procrastination on execution',fix:'2-minute rule — agar 2 min mein ho sakta hai, abhi kar. Bade kaam ko 20-min daily chunks mein todo.'},{w:'Insensitive to others feelings',fix:'Before speaking, pause: "Yeh sun ke unhe kaisa lagega?" Feelings valid hain even if illogical.'},{w:'Analysis paralysis — overthinks everything',fix:'Set a decision deadline. Gather info for X time, then commit. Perfect info kabhi nahi milega.'}],careers:['Programmer','Data Scientist','Mathematician','Philosopher','Researcher'],famous:['Albert Einstein','Bill Gates','Larry Page']},
+    INFJ:{icon:'🌊',title:'INFJ — The Advocate',tag:'Visionary Idealist',overview:'Sabse rare personality type — deep empathy + strong inner vision. Tu dono duniya mein rehta hai: logon ki emotions feel karta hai aur saath hi ek better future ka vision rakhta hai.',strengths:['Deeply empathetic and insightful','Strong sense of purpose','Creative and visionary','Inspiring to others','Principled and determined'],weaknesses:[{w:'Perfectionism leads to burnout',fix:'Done is better than perfect. Launch karo, iterate karo. Progress > perfection.'},{w:'Overly private — difficulty asking for help',fix:'Vulnerability strength hai weakness nahi. Ek trusted person se regularly share karna start karo.'},{w:'Takes on others problems as their own',fix:'Emotional boundaries set karo. "I care about you" aur "I will fix this for you" bilkul alag hai.'}],careers:['Counselor','Writer','Doctor','Teacher','Activist'],famous:['Nelson Mandela','Martin Luther King Jr.','Lady Gaga']},
+    INFP:{icon:'🌸',title:'INFP — The Mediator',tag:'Idealistic Dreamer',overview:'Tu ek rare soul hai — deeply feeling, fiercely values-driven, aur endlessly creative. Tu duniya ko jo hai usse better banana chahta hai, ek story ek time pe.',strengths:['Deeply empathetic','Highly creative','Open-minded','Passionate about values','Dedicated to authenticity'],weaknesses:[{w:'Unrealistic expectations cause disappointment',fix:'Ideal vs realistic distinguish karo. Chhote wins celebrate karo — they add up.'},{w:'Avoids conflict even when necessary',fix:'Conflict = care. "Mujhe yeh baat karni hai kyunki humara connection matter karta hai."'},{w:'Takes criticism too personally',fix:'Feedback = data, not verdict on you as a person. Separate your work from your worth.'}],careers:['Writer','Artist','Counselor','Teacher','Nonprofit'],famous:['William Shakespeare','J.R.R. Tolkien','Princess Diana']},
+    ISTJ:{icon:'📋',title:'ISTJ — The Logistician',tag:'Reliable Executor',overview:'Tu ek pillar of reliability hai. Jo commitment karta hai woh nibhata hai, always. Tradition, order, aur responsibility teri core values hain.',strengths:['Extremely responsible','Calm and practical','Honest and direct','Strong work ethic','Detail-oriented'],weaknesses:[{w:'Rigid — resistant to new methods',fix:'"New" ka matlab "worse" nahi hota. Naye approach ko 30 days try karo before judging it.'},{w:'Judgmental of those who break rules',fix:'Rules guidelines hain, absolute laws nahi. Understand the "why" — context mein apply karo.'},{w:'Difficulty expressing emotions',fix:'Weekly: "Mujhe actually kaisa feel ho raha hai?" — phir woh ek person ke saath share karo.'}],careers:['Accountant','Engineer','Manager','Lawyer','Military'],famous:['George Washington','Warren Buffett','Natalie Portman']},
+    ISFJ:{icon:'🛡',title:'ISFJ — The Defender',tag:'Loyal Protector',overview:'Tu ek quietly powerful force hai — deeply caring, extremely reliable, always ready to support. Teri strength unique hai kyunki tu genuinely observe karta hai aur care karta hai.',strengths:['Reliable and patient','Warm and caring','Detail-oriented','Excellent memory for people','Hard-working and loyal'],weaknesses:[{w:'Neglects own needs for others',fix:'Airplane rule: pehle apna oxygen mask lagao. Self-care = better care for others.'},{w:'Suppresses own feelings to avoid conflict',fix:'Practice "I feel..." statements. Direct but kind feedback is a gift, not aggression.'},{w:'Resistant to change and new ideas',fix:'Monthly ek naya experience try karo — comfort zone slowly expand hogi.'}],careers:['Nurse','Social Worker','Teacher','Admin','HR'],famous:['Mother Teresa','Kate Middleton','Beyoncé']},
+    ISTP:{icon:'🔧',title:'ISTP — The Virtuoso',tag:'Calm Problem-Solver',overview:'Tu ek master of efficiency hai — cool head under pressure, hands-on problem solver, natural mechanic of both things and situations. Logic ko action mein translate karta hai.',strengths:['Calm under pressure','Excellent troubleshooting','Highly practical','Independent and flexible','Curious and observant'],weaknesses:[{w:'Insensitive — ignores emotional needs',fix:'Ask people how they feel, not just what they think. Emotions are data too.'},{w:'Commits to nothing long-term',fix:'Identify ONE thing worth committing to. Depth beats breadth for meaningful results.'},{w:'Takes unnecessary risks',fix:'Risk assessment: "Worst realistic outcome kya hai?" Add a safety buffer, then decide.'}],careers:['Engineer','Pilot','Surgeon','Programmer','Mechanic'],famous:['Clint Eastwood','Michael Jordan','Scarlett Johansson']},
+    ISFP:{icon:'🎨',title:'ISFP — The Adventurer',tag:'Quiet Creative',overview:'Tu ek living contradiction hai — quiet but adventurous, sensitive but bold in expression. Tu duniya ko ek canvas ki tarah dekhta hai aur use beauty se fill karna chahta hai.',strengths:['Warm and charming','Highly creative','Imaginative and original','Passionate about aesthetics','Open to new experiences'],weaknesses:[{w:'Easily stressed by conflict',fix:'Conflict = temporary discomfort for long-term peace. Address small issues before they explode.'},{w:'Difficulty with long-term planning',fix:'One-year vision + quarterly checkpoints. Big goals chunked into weeks feel manageable.'},{w:'Overly self-critical',fix:'Daily: write ONE thing you did well. Evidence-based self-assessment beats harsh inner critic.'}],careers:['Artist','Designer','Musician','Chef','Photographer'],famous:['Michael Jackson','Bob Dylan','Britney Spears']},
+    ENTJ:{icon:'👑',title:'ENTJ — The Commander',tag:'Natural Born Leader',overview:'Tu ek force of nature hai. Tu naturally leadership mein gravitate karta hai, clear vision rakhta hai, aur log tujhe follow karte hain kyunki teri drive infectious hai.',strengths:['Natural leadership','Strategic long-term thinking','Confident and decisive','Efficient and organized','Inspires others to achieve'],weaknesses:[{w:'Impatient with slow progress',fix:'"Slow" aur "stupid" alag hai. Explain your thinking clearly — aur listen karo WHY they are slow.'},{w:'Dismisses emotions as irrelevant',fix:'Emotions = information, not weakness. Team morale directly impacts performance.'},{w:'Domineering in group settings',fix:'Before speaking, ask 2 others first. Best ideas come from inclusive discussion.'}],careers:['CEO','Entrepreneur','Lawyer','Judge','Strategist'],famous:['Steve Jobs','Napoleon Bonaparte','Gordon Ramsay']},
+    ENTP:{icon:'💡',title:'ENTP — The Debater',tag:'Innovative Challenger',overview:'Tu ek intellectual live wire hai — ideas generate karna, assumptions challenge karna, conventional wisdom ko debate karna tera favorite pastime hai.',strengths:['Innovative and creative','Quick and confident','Excellent brainstormer','Knowledgeable and versatile','Charismatic and energetic'],weaknesses:[{w:'Starts many things, finishes few',fix:'For every new idea, finish ONE existing thing first. Completion > initiation.'},{w:'Argues for sport — alienates people',fix:'Ask: "Am I finding truth or just winning?" Sometimes letting others be right is smarter.'},{w:'Poor follow-through on routine tasks',fix:'Systems and checklists free your mind. Automate boring — then execute interesting.'}],careers:['Entrepreneur','Lawyer','Inventor','Marketing Dir.','Consultant'],famous:['Steve Wozniak','Thomas Edison','Mark Twain']},
+    ENFJ:{icon:'🌟',title:'ENFJ — The Protagonist',tag:'Charismatic Inspirer',overview:'Tu ek born leader hai jo logon ko unke best version banana mein help karta hai. Tu naturally sense karta hai ki logon ko kya chahiye — emotionally, practically, aur growth-wise.',strengths:['Charismatic and inspiring','Empathetic and intuitive','Reliable and organized','Natural leader','Excellent communicator'],weaknesses:[{w:'Overly idealistic — expects perfection from others',fix:'People are works in progress. Appreciate the journey, not just the destination.'},{w:'Neglects own needs helping others',fix:'You cannot pour from an empty cup. Weekly self-check: "Main kya chahta hoon right now?"'},{w:'Too people-pleasing — avoids confrontation',fix:'Honesty is kindness. Real friendship includes hard truths. Practice direct but compassionate feedback.'}],careers:['Teacher','Coach','Counselor','Politician','HR Dir.'],famous:['Barack Obama','Oprah Winfrey','MLK Jr.']},
+    ENFP:{icon:'🦋',title:'ENFP — The Campaigner',tag:'Enthusiastic Explorer',overview:'Tu ek burst of creative energy hai — infectious enthusiasm, genuine curiosity, aur endless ideas. Tu people aur possibilities mein beauty dekhta hai jo doosron ko nahi dikhti.',strengths:['Curious and imaginative','Excellent people skills','Energetic and enthusiastic','Optimistic and warm','Creative problem-solving'],weaknesses:[{w:'Poor focus — gets distracted easily',fix:'Time-blocking: specific tasks ko specific windows mein close karo. Phone off during deep work.'},{w:'Overthinks — catastrophizes small problems',fix:'Ask: "Will this matter in 5 years?" Most anxieties are time-sensitive. "Worry window" = 15 min/day.'},{w:'Highly emotional — moods affect work',fix:'Track energy patterns. Schedule hard tasks at peak energy. Protect your environment.'}],careers:['Journalist','Actor','Counselor','Marketer','Entrepreneur'],famous:['Robin Williams','Ellen DeGeneres','Russell Brand']},
+    ESTJ:{icon:'⚖',title:'ESTJ — The Executive',tag:'Order & Structure',overview:'Tu ek pillar of society hai — traditional values, strong work ethic, clear sense of right and wrong. Tu chaos ko order mein convert karta hai aur systems build karta hai.',strengths:['Dedicated and responsible','Excellent organizer','Direct and honest','Patient and reliable','Strong leadership in crisis'],weaknesses:[{w:'Inflexible — my way or wrong way',fix:'Before enforcing a rule, ask "What is the goal?" Same goal + different method = still valid.'},{w:'Judgmental of different lifestyles',fix:'Curiosity > judgment. "Why do they do it that way?" opens more doors than "That is wrong."'},{w:'Difficulty acknowledging own mistakes',fix:'"I was wrong" is strength, not weakness. It builds trust faster than any performance.'}],careers:['Manager','Judge','Military','Accountant','Principal'],famous:['Michelle Obama','Frank Sinatra','Sonia Sotomayor']},
+    ESFJ:{icon:'🤗',title:'ESFJ — The Consul',tag:'Social Glue',overview:'Tu ek community ka heart hai — warm, caring, aur always making sure har koi comfortable feel kare. Teri superpower hai ki tu logon ko genuinely valued feel kara sakta hai.',strengths:['Warm and caring','Excellent social skills','Reliable and practical','Loyal and dutiful','Strong sense of community'],weaknesses:[{w:'Too dependent on others approval',fix:'Weekly: 3 decisions list karo jo sirf apne liye kiye. Your compass > others opinions.'},{w:'Difficulty accepting critical feedback',fix:'Feedback = gift. Reframe: "Yeh person mujhe improve karne mein help kar raha hai."'},{w:'Inflexible about traditions',fix:'Ask: "Is this tradition still serving us?" Some worth keeping, some worth updating.'}],careers:['Teacher','Social Worker','Healthcare','Event Planner','Receptionist'],famous:['Taylor Swift','Bill Clinton','Jennifer Garner']},
+    ESTP:{icon:'⚡',title:'ESTP — The Entrepreneur',tag:'Action-Oriented Risk-Taker',overview:'Tu ek live-in-the-moment powerhouse hai — quick thinking, bold action, natural ability to read people. Tu thrives in fast-paced, high-stakes environments.',strengths:['Bold and direct','Excellent people reader','Action-oriented','Adaptable and energetic','Great in crisis'],weaknesses:[{w:'Insensitive — says what others wont',fix:'Delivery matters as much as content. Right message + wrong delivery = no message received.'},{w:'Impatient with theory and planning',fix:'10-minute planning saves hours of backtracking. Planning is NOT the opposite of action.'},{w:'Takes risks without considering consequences',fix:'Best case, worst case, most likely case — then decide with full information.'}],careers:['Entrepreneur','Salesperson','Paramedic','Trader','Sports Coach'],famous:['Donald Trump','Madonna','Ernest Hemingway']},
+    ESFP:{icon:'🎉',title:'ESFP — The Entertainer',tag:'Life of the Party',overview:'Tu ek living celebration hai — spontaneous, fun-loving, natural gift for making ordinary moments feel magical. Tu logon ko genuinely happy banana chahta hai.',strengths:['Bold and original','Great people skills','Highly observant','Excellent aesthetics','Brings joy to others'],weaknesses:[{w:'Avoids conflict and difficult truths',fix:'Conflict avoidance creates bigger problems later. Address issues early before they compound.'},{w:'Easily bored — difficulty with routines',fix:'Make routines interesting. Add variety within structure. Consistency does not have to be boring.'},{w:'Poor long-term planning',fix:'Monthly financial+goal review. Future you needs present you attention.'}],careers:['Entertainer','Event Planner','PR Manager','Teacher','Sales'],famous:['Adele','Marilyn Monroe','Jamie Oliver']}
+  }
+},
+{
+  id:'student',icon:'📚',title:'Student Personality',sub:'Study Style Quiz',
+  desc:'Discover your unique study style and how to maximize it',
+  color:'#3b82f6',qCount:6,type:'frequency',
+  questions:[
+    {q:"Exam ki raat ko tu kya kar raha hota hai?",opts:[{t:"Puri raat jaag ke padh raha hoon",type:"grinder"},{t:"Relaxed hoon, already pad chuka",type:"smart"},{t:"Friends ke saath WhatsApp group pe cram",type:"social"},{t:"Honestly... kuch nahi kar raha",type:"chill"}]},
+    {q:"Teacher ne tough question pucha. Tu kya karta hai?",opts:[{t:"Haath uthata hoon immediately",type:"smart"},{t:"Sochta hoon lekin bolne ki himmat nahi",type:"grinder"},{t:"Dost se whisper karta hoon",type:"social"},{t:"Neeche dekh leta hoon",type:"chill"}]},
+    {q:"Homework kab karta hai tu?",opts:[{t:"Aate hi seedha karke khatam karta hoon",type:"grinder"},{t:"Jab mood ho — usually raat ko",type:"smart"},{t:"Friends ke saath, koi ek share kar deta",type:"social"},{t:"Subah school jaane se pehle",type:"chill"}]},
+    {q:"Tera sabse bada distraction?",opts:[{t:"Mujhe distraction nahi hota, I am the machine",type:"grinder"},{t:"Social media — ek minute bolta hoon ghanta",type:"social"},{t:"Sone ki ichha",type:"chill"},{t:"Naye ideas aur passion projects",type:"smart"}]},
+    {q:"Result aane wala hai. Tera reaction?",opts:[{t:"Confident hoon, mehnat ki thi",type:"grinder"},{t:"Thoda nervous but okayish feeling",type:"smart"},{t:"Friends ke saath milke open karte hain",type:"social"},{t:"Dil tham ke refresh kar raha hoon portal",type:"chill"}]},
+    {q:"Group project mein tu kaun hota hai?",opts:[{t:"Akela sab karta hoon — quality se compromise nahi",type:"grinder"},{t:"Leader — strategy mera, execution sabka",type:"smart"},{t:"Sab ko saath rakhta hoon, vibe maintain karta",type:"social"},{t:"Jo kaam milta hai woh karta hoon",type:"chill"}]}
+  ],
+  score:function(ans){const c={grinder:0,smart:0,social:0,chill:0};ans.forEach(t=>c[t]++);return Object.entries(c).sort((a,b)=>b[1]-a[1])[0][0];},
+  results:{
+    grinder:{icon:'💪',title:'The Grinder',tag:'Hardest Worker in the Room',overview:'Tu effort mein kisi se kum nahi. Raat ko jaagna, notes banana, baar baar practice — yeh teri identity hai. Hard work is your superpower, but direction matters too.',strengths:['Unmatched work ethic','Never gives up','Deep understanding through repetition','Thorough exam preparation','Consistent performer'],weaknesses:[{w:'Burns out from overwork',fix:'Schedule mandatory rest. 1 off-day per week minimum. Burnout kills consistency — prevent it.'},{w:'Works hard, not always smart',fix:'Active recall, spaced repetition, Feynman technique > passive re-reading. Quality over hours.'},{w:'Misses forest for the trees',fix:'Before every study session: "1 most important thing yahan kya hai?" Big picture pehle.'}],careers:['Doctor','IAS Officer','Engineer','Researcher','Scientist'],famous:['Kalpana Chawla','APJ Abdul Kalam','Sachin Tendulkar']},
+    smart:{icon:'🧠',title:'The Strategist',tag:'Work Smart, Not Just Hard',overview:'Tu IIT chahiye wala student hai — syllabus samajhna, important topics pehle, calm under pressure. Yeh combination rare hai aur powerful hai.',strengths:['Strategic thinker','Calm under exam pressure','Knows what to prioritize','Efficient with time','Strong conceptual understanding'],weaknesses:[{w:'Occasionally lazy on details',fix:'Important topics mein depth dalo. Conceptual understanding + detailed practice = unstoppable.'},{w:'Underestimates easy topics',fix:'100 marks mein sabse zyada "easy" topics se aate hain. Never skip fundamentals.'},{w:'Can be overconfident',fix:'Regular mock tests lene chahiye. Reality check > assumption. Always.'}],careers:['IIT/IIM','Entrepreneur','Management Consultant','Product Manager','Investment Banker'],famous:['Sundar Pichai','Ritesh Agarwal','Raghuram Rajan']},
+    social:{icon:'🤝',title:'The Connector',tag:'Class Ka Dil',overview:'Tu group study ka king hai. Teaching others is actually the best way to learn — tu woh naturally karta hai jo toppers intentionally karte hain.',strengths:['Excellent at explaining concepts','Natural team player','Learns by teaching','Strong communication skills','Well-networked'],weaknesses:[{w:'Dependent on group — struggles alone',fix:'Weekly 2 solo study sessions mandatory. Exam mein akela baithna hai — practice karo yeh.'},{w:'Easily distracted in groups',fix:'Set group rules: 45 min study, 15 min chat. Pomodoro with friends works.'},{w:'Relies on others too much',fix:'Before asking, spend 10 min solving yourself first. Struggle is where learning happens.'}],careers:['Lawyer','Marketing','Teacher','Politician','HR'],famous:['Shashi Tharoor','Priya Krishnaswami','Amartya Sen']},
+    chill:{icon:'😎',title:'The Chill Guy',tag:'Pressure? What Pressure?',overview:'Tu last minute pe bhi survive kar leta hai — yeh ek real talent hai. Yahi calmness + thodi si preparation add ho jaye? Tu bohot aage ja sakta hai.',strengths:['Calm under pressure','No exam anxiety','Good at quick learning','Adaptable','Works well in clutch situations'],weaknesses:[{w:'Procrastinates everything',fix:'2-day rule: koi bhi kaam 2 din se zyada pending mat rakho. Start is the hardest part.'},{w:'No consistent study habit',fix:'Just 30 min daily > 6 hours before exam. Compound learning is very real.'},{w:'Underperforms relative to potential',fix:'Teri ability clearly hai. Gap between potential aur performance = opportunity to claim.'}],careers:['Creative Fields','Startup','Journalism','Film','Design'],famous:['Farhan Akhtar','Imtiaz Ali','Piyush Pandey']}
+  }
+},
+{
+  id:'aura',icon:'✨',title:'Your Aura Type',sub:'Energy & Vibe Quiz',
+  desc:'Discover what energy you radiate to the world around you',
+  color:'#ec4899',qCount:10,type:'frequency',
+  questions:[
+    {q:"Koi strangers ke saath room mein hai. Tu usually...",opts:[{t:"Discussion start karta hoon, instantly connect",type:"gold"},{t:"Quietly observe karta hoon — sab interesting lagta hai",type:"silver"},{t:"Apne thoughts mein ghum hota hoon",type:"purple"},{t:"Comfortable zone create karta hoon sab ke liye",type:"green"}]},
+    {q:"Tera natural element kya lagta hai tujhe?",opts:[{t:"Fire — passion, intensity, unstoppable drive",type:"red"},{t:"Water — flow, depth, emotional intelligence",type:"blue"},{t:"Wind — freedom, ideas, constant movement",type:"gold"},{t:"Earth — stability, nature, grounded wisdom",type:"green"}]},
+    {q:"Doston ke anusaar tu sabse zyada kya hai?",opts:[{t:"The one with the boldest ideas",type:"purple"},{t:"The most reliable, always there",type:"green"},{t:"The one who lights up the room",type:"gold"},{t:"The deep thinker — always has insights",type:"blue"}]},
+    {q:"Koi problem face karte waqt tu...",opts:[{t:"Aggressively tackle karta hoon — head on",type:"red"},{t:"Deeply think karta hoon sab angles se",type:"purple"},{t:"Doosron se perspective laata hoon",type:"blue"},{t:"Patiently wait karta hoon right moment ke liye",type:"silver"}]},
+    {q:"Tera ideal creative outlet kya hai?",opts:[{t:"Music ya art — expressing deep emotions",type:"blue"},{t:"Writing ya storytelling — ideas exploring",type:"purple"},{t:"Performance ya public speaking — commanding attention",type:"gold"},{t:"Building something tangible — hands-on creation",type:"red"}]},
+    {q:"Jab log tujhse pehli baar milte hain toh...",opts:[{t:"Yeh ek intense, powerful person hai",type:"red"},{t:"Isme kuch mysterious, interesting hai",type:"silver"},{t:"Yeh bohot wise aur thoughtful lagta hai",type:"purple"},{t:"Yeh genuinely warm aur caring hai",type:"green"}]},
+    {q:"Teri biggest strength in relationships...",opts:[{t:"Meri honesty aur directness",type:"red"},{t:"Mera deep listening aur empathy",type:"blue"},{t:"Meri unconditional loyalty",type:"green"},{t:"Mera unique perspective on everything",type:"silver"}]},
+    {q:"Late raat 2 baje tu kya sochta hai?",opts:[{t:"Future plans — big dreams aur ambitions",type:"gold"},{t:"Deep questions about life aur existence",type:"purple"},{t:"Past memories aur people I care about",type:"blue"},{t:"Nothing — I sleep like a baby",type:"green"}]},
+    {q:"Tera learning style...",opts:[{t:"By doing — dive in and figure it out",type:"red"},{t:"By observing — watch first, then act",type:"silver"},{t:"By connecting — learn from others stories",type:"blue"},{t:"By understanding — need full picture first",type:"purple"}]},
+    {q:"People aate hain tere paas...",opts:[{t:"Motivation aur bold advice ke liye",type:"gold"},{t:"Deep conversations about meaning ke liye",type:"purple"},{t:"Emotional support aur understanding ke liye",type:"blue"},{t:"Reliable, practical help ke liye",type:"green"}]}
+  ],
+  score:function(ans){const c={red:0,blue:0,purple:0,green:0,gold:0,silver:0};ans.forEach(t=>c[t]++);return Object.entries(c).sort((a,b)=>b[1]-a[1])[0][0];},
+  results:{
+    red:{icon:'🔴',title:'Red Aura — The Warrior',tag:'Raw Power & Passion',overview:'Teri energy unmistakable hai — intense, passionate, aur unstoppable. Tu presence feel karata hai bina bole. Jab tu kisi cheez ke liye committed ho jaata hai, koi force nahi rok sakti.',strengths:['Unstoppable drive and determination','Fearless in the face of challenges','Natural warrior energy','Deeply passionate','Inspires action in others'],weaknesses:[{w:'Anger and intensity can push people away',fix:'Intensity channel karo into focus, not aggression. Breathe 5 seconds before reacting.'},{w:'Impulsive decisions in the heat of moment',fix:'24-hour rule for big decisions. Sleep on it. Morning you is wiser than midnight you.'},{w:'Difficulty slowing down',fix:'Rest is not laziness — it is reloading. Sustainable intensity beats short bursts.'}],careers:['Entrepreneur','Athlete','Military','Activist','Emergency Services'],famous:['Virat Kohli','Muhammad Ali','Malala Yousafzai']},
+    blue:{icon:'🔵',title:'Blue Aura — The Empath',tag:'Emotional Intelligence & Depth',overview:'Tu ek deep ocean hai — calm surface, infinite depth. Tu logon ko feel karta hai before they even speak. Teri emotional intelligence ek rare gift hai.',strengths:['Deep empathy and emotional intelligence','Excellent listener','Creative and expressive','Calming presence','Intuitive understanding of people'],weaknesses:[{w:'Absorbs others negative emotions',fix:'Daily energy cleansing — 10 min alone, breathe, reset. Your emotions vs theirs — learn to distinguish.'},{w:'Overly sensitive to criticism',fix:'Feedback is about your work, not your soul. Separate identity from output.'},{w:'Difficulty with boundaries',fix:'"No" is a complete sentence. Practice saying it without explanation once a week.'}],careers:['Counselor','Artist','Writer','Nurse','Teacher'],famous:['Rumi','Arijit Singh','Gulzar']},
+    purple:{icon:'🟣',title:'Purple Aura — The Mystic',tag:'Intuition & Spiritual Depth',overview:'Tu is duniya mein hai but not entirely of it. Tu patterns dekhta hai, connections feel karta hai, aur depths explore karta hai jo doosron ko nahi dikhte.',strengths:['Powerful intuition','Deep philosophical thinker','Sees beyond surface reality','Highly creative','Natural healer and guide'],weaknesses:[{w:'Disconnected from practical reality',fix:'Ground yourself daily — physical exercise, cooking, anything tangible. Mystical + practical = power.'},{w:'Hard to understand for most people',fix:'Bridge the gap: translate your deep insights into simple language others can use.'},{w:'Overthinks spiritual questions',fix:'Some questions have no answers. Sit in peace with the mystery — not every unknown needs solving.'}],careers:['Psychologist','Writer','Philosopher','Spiritual Guide','Artist'],famous:['Osho','Carl Jung','Rabindranath Tagore']},
+    green:{icon:'🟢',title:'Green Aura — The Healer',tag:'Nurturing & Natural Wisdom',overview:'Tu ek safe harbor hai. Teri presence healing karti hai — tu genuinely care karta hai, aur log woh feel karte hain. Nature, balance, aur harmony teri soul ke elements hain.',strengths:['Naturally healing presence','Deeply empathetic and patient','Grounded and stable','Strong connection to nature','Consistent and reliable'],weaknesses:[{w:'Puts everyone first, self last',fix:'You cannot heal others from an empty place. Self-care is your professional responsibility.'},{w:'Avoids necessary confrontation',fix:'Honest conversations done with love = the most healing thing you can do for someone.'},{w:'Can be taken for granted',fix:'Your giving is valuable. Receive help gracefully too — it is not weakness.'}],careers:['Doctor','Teacher','Counselor','Environmental Activist','Social Worker'],famous:['Mother Teresa','David Attenborough','Jane Goodall']},
+    gold:{icon:'🟡',title:'Gold Aura — The Leader',tag:'Radiant & Magnetic',overview:'Tu walk karta hai toh room shift ho jaata hai. Teri presence magnetic hai — people naturally tujhe sun ne lagte hain. Tu born to lead, inspire, aur light up everything around you.',strengths:['Naturally magnetic and charismatic','Inspires others effortlessly','Visionary leadership','Optimistic and energizing','Makes others feel special'],weaknesses:[{w:'Can become ego-driven',fix:'Regularly ask: "Am I serving others or just enjoying the spotlight?" Purpose > performance.'},{w:'Expects constant recognition',fix:'Internal validation > external. Build self-appreciation that does not need an audience.'},{w:'Burnout from constantly performing',fix:'Vulnerability is your most powerful leadership tool. Real > perfect. Share your struggles.'}],careers:['CEO','Actor','Politician','Motivational Speaker','Performer'],famous:['Shah Rukh Khan','Priyanka Chopra','Narendra Modi']},
+    silver:{icon:'⚪',title:'Silver Aura — The Sage',tag:'Ancient Wisdom & Quiet Power',overview:'Tu ek rare type hai — quietly powerful, deeply wise, aur observant beyond measure. Tujhe rush nahi hoti kyunki tu jaanta hai ki timing is everything.',strengths:['Exceptional observer and analyst','Ancient wisdom in a young soul','Patient and strategic','Sees what others miss','Unique perspective on everything'],weaknesses:[{w:'Too withdrawn — people cannot reach you',fix:'Share your wisdom more freely. Your insights are meant to help others, not stay inside.'},{w:'Analysis paralysis — overthinks actions',fix:'80% information is enough to decide. Waiting for certainty = waiting forever.'},{w:'Can seem cold or aloof',fix:'Warm micro-actions: eye contact, using names, small genuine compliments. Connection is a skill.'}],careers:['Scientist','Philosopher','Strategist','Researcher','Writer'],famous:['APJ Abdul Kalam','Yuval Noah Harari','Eckhart Tolle']}
+  }
+},
+{
+  id:'big5',icon:'🌊',title:'Deep Personality — Big 5',sub:'20 Questions • OCEAN Model',
+  desc:'Scientifically validated personality framework. The most accurate test.',
+  color:'#14b8a6',qCount:20,type:'dimensional5',
+  dims:['O','C','E','A','N'],
+  dimNames:{O:'Openness',C:'Conscientiousness',E:'Extraversion',A:'Agreeableness',N:'Neuroticism'},
+  questions:[
+    {q:"Routine aur predictability tujhe...",dim:'O',opts:[{t:"Comfortable lagti hai — stability is good",dir:'L'},{t:"Boring lagti hai — I crave novelty",dir:'H'}]},
+    {q:"Unusual art form ya abstract concept sunke tu...",dim:'O',opts:[{t:"Deeply intrigued — I want to explore this",dir:'H'},{t:"Mujhe practical, concrete cheezein appeal karti",dir:'L'}]},
+    {q:"Imagination aur daydreaming mein time spend karna...",dim:'O',opts:[{t:"Mera favorite — ideas explore karna",dir:'H'},{t:"Waste of time lagta hai — I prefer action",dir:'L'}]},
+    {q:"Different cultures aur worldviews ke baare mein...",dim:'O',opts:[{t:"Fascinated — diversity makes life richer",dir:'H'},{t:"I prefer what I know — familiar is comfortable",dir:'L'}]},
+    {q:"Tera workspace ya room usually...",dim:'C',opts:[{t:"Organized — I need order to function",dir:'H'},{t:"Creative chaos — I know where everything is",dir:'L'}]},
+    {q:"Koi important task aane pe tu...",dim:'C',opts:[{t:"Immediately plan karta hoon aur systematically execute",dir:'H'},{t:"Last minute pe best karta hoon, planning feels rigid",dir:'L'}]},
+    {q:"Appointments aur deadlines ke baare mein...",dim:'C',opts:[{t:"Always on time — reliability is respect",dir:'H'},{t:"Flexible — strict schedules stress me out",dir:'L'}]},
+    {q:"Long-term goals ke liye tu...",dim:'C',opts:[{t:"Detailed plan banata hoon aur track karta hoon",dir:'H'},{t:"Go with flow — plans change anyway",dir:'L'}]},
+    {q:"Social gatherings tujhe usually...",dim:'E',opts:[{t:"Energize karti hain — I come alive with people",dir:'H'},{t:"Drain karti hain — I need alone time to recharge",dir:'L'}]},
+    {q:"New people se milna...",dim:'E',opts:[{t:"Exciting — I love expanding my circle",dir:'H'},{t:"Exhausting — I prefer deep 1-on-1 connections",dir:'L'}]},
+    {q:"Ek perfect evening...",dim:'E',opts:[{t:"Friends ke saath dinner, dancing, adventure",dir:'H'},{t:"Ghar pe book, movie, ya creative work",dir:'L'}]},
+    {q:"Group discussions mein tu usually...",dim:'E',opts:[{t:"Aage rehta hoon — I enjoy sharing my thoughts",dir:'H'},{t:"Observe karta hoon — I speak when it really matters",dir:'L'}]},
+    {q:"Conflict ho jaye toh tu...",dim:'A',opts:[{t:"Compromise dhundhta hoon — harmony matters",dir:'H'},{t:"Apni position pe firm rehta hoon — I stand my ground",dir:'L'}]},
+    {q:"Stranger help maange raste mein...",dim:'A',opts:[{t:"Definitely help karta hoon — it is just kind",dir:'H'},{t:"Depends — I am cautious about who I help",dir:'L'}]},
+    {q:"Logon ki intentions ke baare mein teri belief...",dim:'A',opts:[{t:"Most people are fundamentally good",dir:'H'},{t:"People are mostly self-interested — be careful",dir:'L'}]},
+    {q:"Koi tujhe galat prove kare toh tu...",dim:'A',opts:[{t:"Open-mindedly consider their point",dir:'H'},{t:"Defend my position — I rarely back down",dir:'L'}]},
+    {q:"Stressful situation mein tera typical reaction...",dim:'N',opts:[{t:"Anxious ho jaata hoon — worrying feels automatic",dir:'H'},{t:"Relatively calm — I handle pressure well",dir:'L'}]},
+    {q:"Criticism sunke tu usually...",dim:'N',opts:[{t:"Bothered feel karta hoon — it stays with me",dir:'H'},{t:"Process karta hoon aur move on — it is just feedback",dir:'L'}]},
+    {q:"Mood swings teri life mein...",dim:'N',opts:[{t:"Common — my emotions fluctuate significantly",dir:'H'},{t:"Rare — I am generally emotionally stable",dir:'L'}]},
+    {q:"Future ke baare mein teri general feeling...",dim:'N',opts:[{t:"Worried — there is a lot that could go wrong",dir:'H'},{t:"Optimistic — things generally work out",dir:'L'}]}
+  ],
+  score:function(ans){
+    const s={O:0,C:0,E:0,A:0,N:0};
+    ans.forEach(a=>{if(a&&a.dir==='H')s[a.dim]++;});
+    return s;
+  },
+  getArchetype:function(scores){
+    return Object.entries(scores).sort((a,b)=>b[1]-a[1])[0][0];
+  },
+  results:{
+    O:{icon:'🔭',title:'The Explorer',tag:'High Openness — Curious Visionary',overview:'Teri defining trait hai curiosity aur imagination. Tu ideas, art, aur new experiences ki taraf magnetic hai. Tu novel solutions dhundta hai jahan doosre sirf problems dekhte hain.',strengths:['Creative and imaginative','Open to new experiences','Intellectually curious','Visionary thinking','Embraces change and diversity'],weaknesses:[{w:'Difficulty with routine and structure',fix:'Pair creativity with systems. Freedom within structure = maximum output.'},{w:'Can be impractical or unrealistic',fix:'For every big idea, define the smallest first step. Execution bridges vision to reality.'},{w:'Too easily bored — lacks follow-through',fix:'Commit: finish one project before starting next. Depth > breadth for meaningful work.'}],careers:['Artist','Researcher','Entrepreneur','Philosopher','Director'],famous:['Picasso','Richard Feynman','Steve Jobs']},
+    C:{icon:'🏆',title:'The Achiever',tag:'High Conscientiousness — Reliable Executor',overview:'Tu ek machine hai — disciplined, organized, relentlessly focused. Teri reliability aur work ethic teri biggest assets hain. Jo tu set karta hai, woh achieve karta hai.',strengths:['Highly disciplined and organized','Reliable and consistent','Strong goal-orientation','Excellent at planning','Detail-oriented'],weaknesses:[{w:'Perfectionism causes unnecessary stress',fix:'Define "good enough" before you start. Set a maximum time limit on any task.'},{w:'Inflexible when plans change',fix:'Build "buffer time" into every plan. Expect the unexpected and plan for flexibility.'},{w:'Overly critical of those less organized',fix:'Everyone has different strengths. Delegate to strengths, do not judge weaknesses.'}],careers:['Surgeon','Accountant','Engineer','Project Manager','Military'],famous:['Warren Buffett','Angela Merkel','Kalpana Chawla']},
+    E:{icon:'🌟',title:'The Connector',tag:'High Extraversion — Social Powerhouse',overview:'Tu energy generate karta hai through people aur experiences. Teri charisma aur social intelligence real assets hain jo doors open karti hain jahan others struggle karte hain.',strengths:['Magnetic and charismatic','Excellent networker','Energetic and enthusiastic','Natural team builder','Inspires and motivates others'],weaknesses:[{w:'Impulsive — acts without reflecting',fix:'Pause before committing. 10-second rule: breathe, then respond. Quality > speed.'},{w:'Needs external validation',fix:'Build internal compass. Daily journaling develops self-awareness independent of opinions.'},{w:'Difficulty with deep solo focus',fix:'Schedule daily "deep work" time. No people, no notifications. 60 mins changes your output.'}],careers:['Sales','Marketing','CEO','Public Speaker','Actor'],famous:['Amitabh Bachchan','Shah Rukh Khan','Barack Obama']},
+    A:{icon:'🕊',title:'The Peacemaker',tag:'High Agreeableness — Compassionate Harmonizer',overview:'Tu genuinely care karta hai — about people, relationships, making the world kinder. Teri warmth aur empathy ek rare combination hai jo lasting bonds banati hai.',strengths:['Deeply empathetic','Excellent team player','Conflict resolution skills','Trustworthy and genuine','Creates harmony in groups'],weaknesses:[{w:'Difficulty saying no — overcommits',fix:'"Let me check my schedule" is a complete, respectable answer. Use it liberally.'},{w:'Avoids necessary conflicts',fix:'Conflict done with love = healing. Avoiding it = slow poison for relationships.'},{w:'Can be taken for granted',fix:'Kindness + clear boundaries = healthy. Track whether relationships are reciprocal.'}],careers:['Counselor','Social Worker','Teacher','Diplomat','HR'],famous:['Dalai Lama','Mahatma Gandhi','Fred Rogers']},
+    N:{icon:'🌧',title:'The Sensitive Soul',tag:'High Neuroticism — Deeply Feeling',overview:'Tu deeply feel karta hai — jo ek real superpower hai creatively aur interpersonally. Teri emotional depth teri art, empathy, aur motivation ka source hai. Channel it.',strengths:['Deeply perceptive and empathetic','Highly motivated by emotions','Creative expression of feelings','Vigilant and cautious','Strong emotional memory'],weaknesses:[{w:'Anxiety and worry drain energy',fix:'Daily: write 3 specific worries + what you control about each. Action > rumination.'},{w:'Emotional reactions affect decisions',fix:'HALT check before deciding: Hungry? Angry? Lonely? Tired? If yes — wait.'},{w:'Difficulty letting go of past events',fix:'Journaling is medicine. Write it out, process it, then consciously choose to move forward.'}],careers:['Artist','Writer','Psychologist','Actor','Musician'],famous:['Adele','Sylvia Plath','Vincent van Gogh']}
+  }
+}
+];
+
+/* ============================
+   STATE
+   ============================ */
+let state = {
+  quiz: null,
+  qIdx: 0,
+  answers: [],
+  result: null
+};
+
+let builderColor = '#8b5cf6';
+let builderTypes = [];
+let builderQuestions = [];
+
+/* ============================
+   INIT
+   ============================ */
+function init(){
+  renderHome();
+  loadCustomQuizzes();
+  document.querySelectorAll('.color-opt').forEach(el=>{
+    el.addEventListener('click',()=>{
+      document.querySelectorAll('.color-opt').forEach(e=>e.classList.remove('active'));
+      el.classList.add('active');
+      builderColor = el.dataset.c;
+    });
+  });
+}
+
+function loadCustomQuizzes(){
+  try{
+    const saved = JSON.parse(localStorage.getItem('ph_custom')||'[]');
+    saved.forEach(q=>QUIZZES.push(q));
+  }catch(e){}
+}
+
+/* ============================
+   HOME
+   ============================ */
+function renderHome(){
+  showScreen('s-home');
+  const grid = document.getElementById('quiz-grid');
+  grid.innerHTML = QUIZZES.map(q=>`
+    <div class="quiz-card" onclick="startQuiz('${q.id}')" style="--c:${q.color}">
+      <span class="card-icon">${q.icon}</span>
+      <div class="card-title">${q.title}</div>
+      <div class="card-sub" style="color:${q.color}">${q.sub||''}</div>
+      <div class="card-desc">${q.desc}</div>
+      <div class="card-meta">
+        <span class="card-qcount">${q.qCount} Questions</span>
+        <span class="card-arr" style="color:${q.color}">→</span>
+      </div>
+    </div>
+  `).join('')+`
+    <div class="quiz-card add-card" onclick="showBuilder()">
+      <span class="add-icon">+</span>
+      <span class="add-text">Custom Quiz Banao</span>
+    </div>`;
+}
+
+function goHome(){renderHome();}
+
+/* ============================
+   QUIZ ENGINE
+   ============================ */
+function startQuiz(id){
+  const q = QUIZZES.find(x=>x.id===id);
+  if(!q)return;
+  state = {quiz:q, qIdx:0, answers:[], result:null};
+  document.getElementById('qtbar').textContent = q.title;
+  showScreen('s-quiz');
+  renderQ();
+}
+
+function renderQ(){
+  const {quiz, qIdx, answers} = state;
+  const q = quiz.questions[qIdx];
+  const total = quiz.questions.length;
+  const pct = Math.round((qIdx/total)*100);
+
+  document.getElementById('qlabel').textContent = `Q ${qIdx+1} of ${total}`;
+  document.getElementById('qpct').textContent = pct+'%';
+  document.getElementById('pfill').style.width = pct+'%';
+  document.getElementById('qbadge').textContent = `Question ${qIdx+1}`;
+  document.getElementById('qtext').textContent = q.q;
+
+  const sel = answers[qIdx];
+  const isBig5 = quiz.type==='dimensional5';
+  const isDim = quiz.type==='dimensional';
+
+  let optsHTML = '';
+  if(isDim || isBig5){
+    optsHTML = q.opts.map((o,i)=>`
+      <button class="opt${sel&&(sel.dir===o.dir)?' sel':''}" onclick="pickDim(${i})">
+        <span class="odot"></span>${o.t}
+      </button>`).join('');
+  } else {
+    optsHTML = q.opts.map((o,i)=>`
+      <button class="opt${sel===o.type?' sel':''}" onclick="pickFreq('${o.type}')">
+        <span class="odot"></span>${o.t}
+      </button>`).join('');
+  }
+
+  document.getElementById('qopts').innerHTML = optsHTML;
+  document.getElementById('qback').disabled = qIdx===0;
+  const hasAns = !!sel;
+  document.getElementById('qnext').disabled = !hasAns;
+  document.getElementById('qnext').textContent = qIdx===total-1?'Result Dekho ✦':'Next →';
+}
+
+function pickFreq(type){
+  state.answers[state.qIdx] = type;
+  document.querySelectorAll('.opt').forEach(b=>b.classList.remove('sel'));
+  event.currentTarget.classList.add('sel');
+  document.getElementById('qnext').disabled = false;
+}
+
+function pickDim(i){
+  const q = state.quiz.questions[state.qIdx];
+  const o = q.opts[i];
+  const isBig5 = state.quiz.type==='dimensional5';
+  state.answers[state.qIdx] = isBig5 ? {dim:q.dim, dir:o.dir} : o;
+  document.querySelectorAll('.opt').forEach(b=>b.classList.remove('sel'));
+  event.currentTarget.classList.add('sel');
+  document.getElementById('qnext').disabled = false;
+}
+
+function qNext(){
+  if(!state.answers[state.qIdx]) return;
+  if(state.qIdx < state.quiz.questions.length-1){
+    state.qIdx++;
+    renderQ();
+  } else {
+    showResult();
+  }
+}
+
+function qPrev(){
+  if(state.qIdx>0){state.qIdx--;renderQ();}
+}
+
+function retakeQuiz(){
+  startQuiz(state.quiz.id);
+}
+
+/* ============================
+   RESULT
+   ============================ */
+function showResult(){
+  const quiz = state.quiz;
+  let result, typeKey;
+
+  if(quiz.type==='dimensional5'){
+    const scores = quiz.score(state.answers);
+    typeKey = quiz.getArchetype(scores);
+    result = quiz.results[typeKey];
+    state.result = {result, typeKey, scores};
+    renderBig5Result(result, scores, quiz);
+  } else if(quiz.type==='dimensional'){
+    typeKey = quiz.score(state.answers);
+    result = quiz.results[typeKey];
+    state.result = {result, typeKey};
+    renderStandardResult(result);
+  } else {
+    typeKey = quiz.score(state.answers);
+    result = quiz.results[typeKey];
+    state.result = {result, typeKey};
+    renderStandardResult(result);
+  }
+
+  document.getElementById('pfill').style.width='100%';
+  showScreen('s-result');
+}
+
+function renderStandardResult(r){
+  document.getElementById('r-icon').textContent = r.icon;
+  document.getElementById('r-tag').textContent = r.tag;
+  document.getElementById('r-tag').style.cssText = 'background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.25);color:#a78bfa;display:inline-block;border-radius:99px;padding:4px 14px;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.75rem;';
+  document.getElementById('r-title').textContent = r.title;
+  document.getElementById('r-overview').textContent = r.overview;
+
+  let html = '';
+  // Strengths
+  html += `<div class="r-section"><div class="r-section-title">Strengths</div><div class="strength-list">`;
+  r.strengths.forEach(s=>{ html+=`<div class="strength-item">${s}</div>`; });
+  html += `</div></div>`;
+  // Weaknesses
+  html += `<div class="r-section"><div class="r-section-title">Weaknesses & How to Fix</div><div class="weakness-list">`;
+  r.weaknesses.forEach(w=>{
+    html+=`<div class="weakness-card"><div class="w-head">${w.w}</div><div class="w-fix"><strong>Fix →</strong> ${w.fix}</div></div>`;
+  });
+  html += `</div></div>`;
+  // Careers
+  html += `<div class="r-section"><div class="r-section-title">Career Paths</div><div class="career-chips">`;
+  r.careers.forEach(c=>{ html+=`<div class="career-chip">${c}</div>`; });
+  html += `</div></div>`;
+  // Famous
+  html += `<div class="r-section"><div class="r-section-title">Famous People Like You</div><div class="famous-list">`;
+  r.famous.forEach(f=>{ html+=`<div class="famous-chip">★ ${f}</div>`; });
+  html += `</div></div>`;
+
+  document.getElementById('r-body').innerHTML = html;
+}
+
+function renderBig5Result(r, scores, quiz){
+  document.getElementById('r-icon').textContent = r.icon;
+  document.getElementById('r-tag').textContent = r.tag;
+  document.getElementById('r-tag').style.cssText='background:rgba(20,184,166,0.12);border:1px solid rgba(20,184,166,0.25);color:#5eead4;display:inline-block;border-radius:99px;padding:4px 14px;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.75rem;';
+  document.getElementById('r-title').textContent = r.title;
+  document.getElementById('r-overview').textContent = r.overview;
+
+  let html = '';
+  // Big 5 bars
+  html += `<div class="r-section"><div class="r-section-title">Your OCEAN Profile</div><div class="b5-bars">`;
+  const colors = {O:'#8b5cf6',C:'#14b8a6',E:'#f59e0b',A:'#ec4899',N:'#3b82f6'};
+  Object.entries(scores).forEach(([dim,val])=>{
+    const pct = Math.round((val/4)*100);
+    html += `<div class="b5-row">
+      <div class="b5-meta"><span class="b5-label">${quiz.dimNames[dim]}</span><span class="b5-val">${pct}%</span></div>
+      <div class="b5-track"><div class="b5-fill" style="width:${pct}%;background:linear-gradient(90deg,${colors[dim]},${colors[dim]}aa)"></div></div>
+    </div>`;
+  });
+  html += `</div></div>`;
+  // Strengths
+  html += `<div class="r-section"><div class="r-section-title">Strengths</div><div class="strength-list">`;
+  r.strengths.forEach(s=>{ html+=`<div class="strength-item">${s}</div>`; });
+  html += `</div></div>`;
+  // Weaknesses
+  html += `<div class="r-section"><div class="r-section-title">Weaknesses & How to Fix</div><div class="weakness-list">`;
+  r.weaknesses.forEach(w=>{
+    html+=`<div class="weakness-card"><div class="w-head">${w.w}</div><div class="w-fix"><strong>Fix →</strong> ${w.fix}</div></div>`;
+  });
+  html += `</div></div>`;
+  // Careers
+  html += `<div class="r-section"><div class="r-section-title">Career Paths</div><div class="career-chips">`;
+  r.careers.forEach(c=>{ html+=`<div class="career-chip">${c}</div>`; });
+  html += `</div></div>`;
+  html += `<div class="r-section"><div class="r-section-title">Famous People Like You</div><div class="famous-list">`;
+  r.famous.forEach(f=>{ html+=`<div class="famous-chip">★ ${f}</div>`; });
+  html += `</div></div>`;
+
+  document.getElementById('r-body').innerHTML = html;
+}
+
+function doShare(){
+  const r = state.result.result;
+  const quiz = state.quiz;
+  const txt = `Main "${r.title}" hoon! ${r.icon}\n"${r.tag}"\n\n${quiz.title} pe check karo — ${quiz.qCount} questions mein discover karo kaun ho tum!\n\n[PersonalityHub]`;
+  window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');
+}
+
+/* ============================
+   QUIZ BUILDER
+   ============================ */
+function showBuilder(){
+  showScreen('s-builder');
+  builderTypes = [];
+  builderQuestions = [];
+  document.getElementById('b-name').value='';
+  document.getElementById('b-emoji').value='';
+  document.getElementById('b-desc').value='';
+  document.getElementById('b-types').innerHTML='';
+  document.getElementById('b-questions').innerHTML='';
+  addType(); addType();
+  addQuestion(); addQuestion(); addQuestion(); addQuestion();
+}
+
+function addType(){
+  const idx = builderTypes.length;
+  builderTypes.push({id:'type'+idx,name:'',desc:'',strengths:'',weakness:'',fix:''});
+  renderBuilderTypes();
+}
+
+function removeType(idx){
+  builderTypes.splice(idx,1);
+  renderBuilderTypes();
+}
+
+function renderBuilderTypes(){
+  document.getElementById('b-types').innerHTML = builderTypes.map((t,i)=>`
+    <div class="r-type-card">
+      <div class="b-q-head">
+        <span class="r-type-head">Result Type ${i+1}</span>
+        ${builderTypes.length>2?`<button class="b-q-del" onclick="removeType(${i})">✕</button>`:''}
+      </div>
+      <div class="field-row" style="margin-bottom:8px;">
+        <input class="field-input" placeholder="Type naam (e.g. Leader)" value="${t.name}" oninput="builderTypes[${i}].name=this.value"/>
+        <input class="field-input" placeholder="Short ID (e.g. leader)" value="${t.id}" oninput="builderTypes[${i}].id=this.value"/>
+      </div>
+      <textarea class="field-input" placeholder="Is type ka description..." style="margin-bottom:6px;min-height:60px;" oninput="builderTypes[${i}].desc=this.value">${t.desc}</textarea>
+      <input class="field-input" placeholder="Strengths (comma separated)" style="margin-bottom:6px;" value="${t.strengths}" oninput="builderTypes[${i}].strengths=this.value"/>
+      <input class="field-input" placeholder="Main weakness" style="margin-bottom:6px;" value="${t.weakness}" oninput="builderTypes[${i}].weakness=this.value"/>
+      <input class="field-input" placeholder="How to fix it" value="${t.fix}" oninput="builderTypes[${i}].fix=this.value"/>
+    </div>`).join('');
+}
+
+function addQuestion(){
+  const idx = builderQuestions.length;
+  builderQuestions.push({q:'',opts:[{t:'',type:''},{t:'',type:''},{t:'',type:''},{t:'',type:''}]});
+  renderBuilderQuestions();
+}
+
+function removeQuestion(idx){
+  builderQuestions.splice(idx,1);
+  renderBuilderQuestions();
+}
+
+function renderBuilderQuestions(){
+  document.getElementById('b-questions').innerHTML = builderQuestions.map((bq,i)=>`
+    <div class="b-q-card">
+      <div class="b-q-head">
+        <span class="b-q-num">Question ${i+1}</span>
+        ${builderQuestions.length>4?`<button class="b-q-del" onclick="removeQuestion(${i})">✕ Remove</button>`:''}
+      </div>
+      <input class="field-input" placeholder="Question likho..." style="margin-bottom:10px;" value="${bq.q}" oninput="builderQuestions[${i}].q=this.value"/>
+      ${bq.opts.map((o,j)=>`
+        <div class="b-opt-row">
+          <input class="b-opt-input" placeholder="Option ${j+1}" value="${o.t}" oninput="builderQuestions[${i}].opts[${j}].t=this.value"/>
+          <select class="b-opt-type" onchange="builderQuestions[${i}].opts[${j}].type=this.value">
+            <option value="">Type?</option>
+            ${builderTypes.map(t=>`<option value="${t.id}" ${o.type===t.id?'selected':''}>${t.name||'Type '+(builderTypes.indexOf(t)+1)}</option>`).join('')}
+          </select>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+function saveCustomQuiz(){
+  const name = document.getElementById('b-name').value.trim();
+  const emoji = document.getElementById('b-emoji').value.trim();
+  const desc = document.getElementById('b-desc').value.trim();
+
+  if(!name||!emoji){showToast('Quiz naam aur emoji daalo!');return;}
+  if(builderTypes.filter(t=>t.name&&t.id).length<2){showToast('Kam se kam 2 result types complete karo!');return;}
+  if(builderQuestions.filter(q=>q.q&&q.opts.every(o=>o.t&&o.type)).length<4){showToast('Kam se kam 4 complete questions chahiye!');return;}
+
+  const results = {};
+  builderTypes.forEach(t=>{
+    if(!t.id||!t.name)return;
+    results[t.id]={
+      icon:emoji,
+      title:t.name,
+      tag:t.name,
+      overview:t.desc||'A unique personality type.',
+      strengths:t.strengths?t.strengths.split(',').map(s=>s.trim()):['Unique strengths'],
+      weaknesses:t.weakness?[{w:t.weakness,fix:t.fix||'Work on it daily.'}]:[],
+      careers:[],
+      famous:[]
+    };
+  });
+
+  const quiz = {
+    id:'custom_'+Date.now(),
+    icon:emoji,
+    title:name,
+    sub:'Custom Quiz',
+    desc:desc||'A custom personality quiz',
+    color:builderColor,
+    qCount:builderQuestions.length,
+    type:'frequency',
+    questions:builderQuestions.filter(q=>q.q),
+    score:function(ans){const c={};ans.forEach(t=>{c[t]=(c[t]||0)+1;});return Object.entries(c).sort((a,b)=>b[1]-a[1])[0][0];},
+    results
+  };
+
+  QUIZZES.push(quiz);
+  try{
+    const saved=JSON.parse(localStorage.getItem('ph_custom')||'[]');
+    const saveable={...quiz};
+    delete saveable.score;
+    saved.push(saveable);
+    localStorage.setItem('ph_custom',JSON.stringify(saved));
+  }catch(e){}
+
+  showToast('Quiz save ho gaya! ✦');
+  setTimeout(()=>{goHome(); setTimeout(()=>startQuiz(quiz.id),300);},800);
+}
+
+/* ============================
+   UTILS
+   ============================ */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const el=document.getElementById(id);
+  el.classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.style.display='block';
+  setTimeout(()=>t.style.display='none',2500);
+}
+
+init();
+</script>
+</body>
+</html>
